@@ -396,6 +396,9 @@ class BladeGame {
         document.getElementById('red-count').textContent = this.bladeCounts.red;
         document.getElementById('yellow-count').textContent = this.bladeCounts.yellow;
         document.getElementById('blue-count').textContent = this.bladeCounts.blue;
+
+        // Update score display
+        document.getElementById('score').textContent = this.score;
     }
 
     render() {

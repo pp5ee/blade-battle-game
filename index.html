@@ -8,8 +8,8 @@
         body {
             margin: 0;
             padding: 0;
-            background: #1a1a1a;
-            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -19,9 +19,13 @@
 
         #game-container {
             position: relative;
-            border: 2px solid #444;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+            border: 3px solid #ff4444;
+            border-radius: 12px;
+            box-shadow:
+                0 0 30px rgba(255, 0, 0, 0.5),
+                0 0 60px rgba(255, 0, 0, 0.3),
+                inset 0 0 20px rgba(255, 0, 0, 0.2);
+            background: #0a0a0a;
         }
 
         #game-canvas {
@@ -31,30 +35,82 @@
 
         #ui-overlay {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            top: 15px;
+            left: 15px;
             color: white;
-            font-size: 14px;
-            text-shadow: 1px 1px 2px black;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
         }
 
         .blade-count {
-            margin-bottom: 5px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            background: rgba(0, 0, 0, 0.7);
+            margin-bottom: 8px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 20, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .red { color: #ff4444; }
-        .yellow { color: #ffff44; }
-        .blue { color: #4444ff; }
+        .blade-count::before {
+            content: "⚔️";
+            font-size: 14px;
+        }
+
+        .red {
+            color: #ff6b6b;
+            border-left: 3px solid #ff4444;
+        }
+        .yellow {
+            color: #ffd93d;
+            border-left: 3px solid #ffcc00;
+        }
+        .blue {
+            color: #4dabf7;
+            border-left: 3px solid #339af0;
+        }
+
+        #score-display {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: #ffd93d;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 20, 0.8) 100%);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
 
         #instructions {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
-            color: #888;
-            font-size: 12px;
+            bottom: 15px;
+            left: 15px;
+            color: #aaa;
+            font-size: 13px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #game-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff4444;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 1;
         }
     </style>
 </head>
@@ -62,10 +118,16 @@
     <div id="game-container">
         <canvas id="game-canvas" width="800" height="600"></canvas>
 
+        <div id="game-title">转刀刀</div>
+
         <div id="ui-overlay">
             <div class="blade-count red">红刀: <span id="red-count">0</span></div>
             <div class="blade-count yellow">黄刀: <span id="yellow-count">0</span></div>
             <div class="blade-count blue">蓝刀: <span id="blue-count">0</span></div>
+        </div>
+
+        <div id="score-display">
+            分数: <span id="score">0</span>
         </div>
 
         <div id="instructions">
