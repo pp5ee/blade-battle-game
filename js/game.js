@@ -503,17 +503,11 @@ class BladeGame {
     }
 
     showGameOver() {
-        const overlay = document.getElementById('game-over-overlay');
-        if (overlay) {
-            overlay.style.display = 'flex';
-        }
+        document.getElementById('game-over-overlay')?.style.setProperty('display', 'flex');
     }
 
     hideGameOver() {
-        const overlay = document.getElementById('game-over-overlay');
-        if (overlay) {
-            overlay.style.display = 'none';
-        }
+        document.getElementById('game-over-overlay')?.style.setProperty('display', 'none');
     }
 
     render() {
@@ -953,12 +947,8 @@ window.addEventListener('load', () => {
     window.game = game;
     document.getElementById('game-canvas').__game = game;
 
-    // Setup restart button functionality
-    document.getElementById('restart-button').addEventListener('click', () => {
-        game.resetGame();
-    });
-
-    document.getElementById('restart-game-button').addEventListener('click', () => {
-        game.resetGame();
+    // Setup restart button functionality (both buttons use same function)
+    ['restart-button', 'restart-game-button'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', () => game.resetGame());
     });
 });
