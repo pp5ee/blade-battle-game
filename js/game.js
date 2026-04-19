@@ -160,10 +160,14 @@ class BladeGame {
         localStorage.removeItem('bladeBladeGameState');
 
         // Reset game state
+        this.gameState = 'playing';
         this.player = new Player(this.worldWidth / 2, this.worldHeight / 2);
         this.blades = [];
         this.npcs = [];
         this.score = 0;
+
+        // Hide game over overlay
+        this.hideGameOver();
 
         // Create new game elements
         this.createInitialBlades();
@@ -243,6 +247,11 @@ class BladeGame {
     }
 
     update(deltaTime) {
+        // Check game state first
+        if (this.gameState === 'gameover') {
+            return; // Stop updating game logic during game over
+        }
+
         // Update player
         this.player.update(deltaTime, this.keys, this.worldWidth, this.worldHeight);
 
@@ -260,6 +269,9 @@ class BladeGame {
 
         // Check collisions
         this.checkCollisions();
+
+        // Check for game over condition
+        this.checkGameOver();
 
         // Update UI
         this.updateUI();
@@ -358,7 +370,7 @@ class BladeGame {
 
         // Diminishing returns for large blade counts
         const totalBlades = bladeCounts.red + bladeCounts.yellow + bladeCounts.blue;
-        const diminishingFactor = Math.min(1, 100 / (100 + totalBlades * 0.1));
+        const diminishingFactor = Math.min(1, 100 / (100 + totalBlades * 1.0));
 
         return (redValue + yellowValue + blueValue) * diminishingFactor;
     }
@@ -474,6 +486,36 @@ class BladeGame {
         }
     }
 
+    checkGameOver() {
+        // Game over condition: player has collected at least one blade and then lost all
+        const totalBlades = this.player.bladeCounts.red + this.player.bladeCounts.yellow + this.player.bladeCounts.blue;
+
+        // Only trigger game over if player had blades before and now has none
+        if (totalBlades === 0 && this.player.hadBlades) {
+            this.gameState = 'gameover';
+            this.showGameOver();
+        }
+
+        // Track if player ever had blades
+        if (totalBlades > 0) {
+            this.player.hadBlades = true;
+        }
+    }
+
+    showGameOver() {
+        const overlay = document.getElementById('game-over-overlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
+    }
+
+    hideGameOver() {
+        const overlay = document.getElementById('game-over-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
     render() {
         // Clear canvas
         this.ctx.fillStyle = '#0a0a0a';
@@ -570,6 +612,7 @@ class Player {
         this.color = '#ffffff';
         this.bladeCounts = { red: 0, yellow: 0, blue: 0 };
         this.direction = 0; // in radians
+        this.hadBlades = false; // Track if player ever had blades
     }
 
     update(deltaTime, keys, worldWidth, worldHeight) {
@@ -646,7 +689,9 @@ class Player {
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
-        ctx.lineTo(this.x + this.radius * 0.8, this.y);
+        const dx = Math.cos(this.direction) * this.radius * 0.8;
+        const dy = Math.sin(this.direction) * this.radius * 0.8;
+        ctx.lineTo(this.x + dx, this.y + dy);
         ctx.stroke();
     }
 }
@@ -903,5 +948,17 @@ class NPC {
 
 // Initialize game when page loads
 window.addEventListener('load', () => {
-    new BladeGame();
+    const game = new BladeGame();
+    // Expose game instance for debugging
+    window.game = game;
+    document.getElementById('game-canvas').__game = game;
+
+    // Setup restart button functionality
+    document.getElementById('restart-button').addEventListener('click', () => {
+        game.resetGame();
+    });
+
+    document.getElementById('restart-game-button').addEventListener('click', () => {
+        game.resetGame();
+    });
 });
