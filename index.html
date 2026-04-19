@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>转刀刀 - Blade Blade Game</title>
+    <!-- UI风格参考 blade.jpeg - Inspired by blade image visual style -->
     <style>
+        /* UI风格参考 blade.jpeg - Inspired by blade image visual style */
         body {
             margin: 0;
             padding: 0;
@@ -26,6 +28,7 @@
                 0 0 60px rgba(255, 0, 0, 0.3),
                 inset 0 0 20px rgba(255, 0, 0, 0.2);
             background: #0a0a0a;
+            /* Blade-inspired styling: sharp edges, metallic gradients */
         }
 
         #game-canvas {
@@ -53,6 +56,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            /* Blade-inspired metallic gradient effects */
         }
 
         .blade-count::before {
@@ -99,6 +103,21 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
+        /* Strategic movement indicator - blade count based avoidance */
+        .strategic-indicator {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd93d;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
         #game-title {
             position: absolute;
             top: 50%;
@@ -131,7 +150,11 @@
         </div>
 
         <div id="instructions">
-            移动: WASD 或 方向键 | 攻击: 靠近敌人自动攻击
+            移动: WASD 或 方向键 | 攻击: 靠近敌人自动攻击 | 战略移动: 根据刀数量避免交战
+        </div>
+
+        <div class="strategic-indicator" id="strategic-indicator">
+            战略模式: 根据刀数量自动调整移动策略
         </div>
     </div>
 
