@@ -70,6 +70,13 @@ start index.html # Windows
 xdg-open index.html # Linux
 ```
 
+### 配置选项
+游戏支持以下配置选项，可在 `js/game.js` 中修改：
+- 世界大小：`worldWidth` 和 `worldHeight`
+- 游戏难度：NPC数量和初始刀刀分布
+- 视觉效果：刀刀颜色、发光效果等
+- 游戏平衡：移动速度、战斗公式等
+
 ## 游戏机制详解
 
 ### 移动系统
