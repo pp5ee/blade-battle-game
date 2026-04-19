@@ -18,10 +18,12 @@ class BladeGame {
         this.player = null;
         this.blades = [];
         this.npcs = [];
+        this.particles = [];
 
         // Game state
         this.score = 0;
-        this.bladeCounts = { red: 0, yellow: 0, blue: 0 };
+        // bladeCounts moved to Player entity as single source of truth
+        this.autoSaveInterval = null;
 
         // Input handling
         this.keys = {};
@@ -63,8 +65,13 @@ class BladeGame {
     }
 
     setupAutoSave() {
+        // Clear existing interval if any
+        if (this.autoSaveInterval) {
+            clearInterval(this.autoSaveInterval);
+        }
+
         // Auto-save every 30 seconds
-        setInterval(() => {
+        this.autoSaveInterval = setInterval(() => {
             this.saveGameState();
         }, 30000);
 
@@ -92,7 +99,6 @@ class BladeGame {
                 bladeCounts: npc.bladeCounts
             })),
             score: this.score,
-            bladeCounts: this.bladeCounts,
             timestamp: Date.now()
         };
 
@@ -132,7 +138,6 @@ class BladeGame {
 
                     // Load game stats
                     this.score = gameState.score;
-                    this.bladeCounts = gameState.bladeCounts;
 
                     console.log('Game state loaded successfully');
                 } else {
@@ -145,6 +150,12 @@ class BladeGame {
     }
 
     resetGame() {
+        // Clear autosave interval
+        if (this.autoSaveInterval) {
+            clearInterval(this.autoSaveInterval);
+            this.autoSaveInterval = null;
+        }
+
         // Clear saved game state
         localStorage.removeItem('bladeBladeGameState');
 
@@ -153,11 +164,13 @@ class BladeGame {
         this.blades = [];
         this.npcs = [];
         this.score = 0;
-        this.bladeCounts = { red: 0, yellow: 0, blue: 0 };
 
         // Create new game elements
         this.createInitialBlades();
         this.createInitialNPCs();
+
+        // Re-initialize autosave
+        this.setupAutoSave();
 
         console.log('Game reset successfully');
     }
@@ -237,13 +250,22 @@ class BladeGame {
         this.updateCamera();
 
         // Update NPCs
-        this.npcs.forEach(npc => npc.update(deltaTime, this.player, this.worldWidth, this.worldHeight));
+        this.npcs.forEach(npc => npc.update(deltaTime, this.player, this.worldWidth, this.worldHeight, this));
+
+        // Update blades (animation and effects)
+        this.blades.forEach(blade => blade.update(deltaTime));
+
+        // Update particles
+        this.updateParticles(deltaTime);
 
         // Check collisions
         this.checkCollisions();
 
         // Update UI
         this.updateUI();
+
+        // Update strategic indicator
+        this.updateStrategicIndicator();
     }
 
     updateCamera() {
@@ -266,7 +288,7 @@ class BladeGame {
 
             if (distance < this.player.radius + blade.radius) {
                 // Player collected blade
-                this.bladeCounts[blade.color]++;
+                this.player.bladeCounts[blade.color]++;
                 this.score += 10;
                 return false; // Remove blade from array
             }
@@ -288,8 +310,8 @@ class BladeGame {
 
     handleCombat(player, npc) {
         // Advanced combat system with strategic elements
-        const playerPower = this.calculateCombatPower(player);
-        const npcPower = this.calculateCombatPower(npc);
+        const playerPower = this.calculateCombatPower(player.bladeCounts);
+        const npcPower = this.calculateCombatPower(npc.bladeCounts);
         const powerDifference = Math.abs(playerPower - npcPower);
 
         // Combat outcomes based on power difference
@@ -327,15 +349,15 @@ class BladeGame {
         // If equal power, no combat outcome (stalemate)
     }
 
-    calculateCombatPower(entity) {
-        // Advanced combat formula considering color hierarchy and strategic factors
+    calculateCombatPower(bladeCounts) {
+        // Unified combat formula considering color hierarchy and strategic factors
         // Red (3x) > Yellow (2x) > Blue (1x) with diminishing returns
-        const redValue = entity.bladeCounts.red * 3;
-        const yellowValue = entity.bladeCounts.yellow * 2;
-        const blueValue = entity.bladeCounts.blue * 1;
+        const redValue = bladeCounts.red * 3;
+        const yellowValue = bladeCounts.yellow * 2;
+        const blueValue = bladeCounts.blue * 1;
 
         // Diminishing returns for large blade counts
-        const totalBlades = entity.bladeCounts.red + entity.bladeCounts.yellow + entity.bladeCounts.blue;
+        const totalBlades = bladeCounts.red + bladeCounts.yellow + bladeCounts.blue;
         const diminishingFactor = Math.min(1, 100 / (100 + totalBlades * 0.1));
 
         return (redValue + yellowValue + blueValue) * diminishingFactor;
@@ -347,12 +369,12 @@ class BladeGame {
 
         // Lose blades in reverse color hierarchy (blue first, then yellow, then red)
         for (let i = 0; i < bladesToLose; i++) {
-            if (this.bladeCounts.blue > 0) {
-                this.bladeCounts.blue--;
-            } else if (this.bladeCounts.yellow > 0) {
-                this.bladeCounts.yellow--;
-            } else if (this.bladeCounts.red > 0) {
-                this.bladeCounts.red--;
+            if (this.player.bladeCounts.blue > 0) {
+                this.player.bladeCounts.blue--;
+            } else if (this.player.bladeCounts.yellow > 0) {
+                this.player.bladeCounts.yellow--;
+            } else if (this.player.bladeCounts.red > 0) {
+                this.player.bladeCounts.red--;
             }
         }
 
@@ -365,40 +387,91 @@ class BladeGame {
         for (let i = 0; i < count; i++) {
             setTimeout(() => {
                 // Create particle effect
-                this.createParticle(x, y, '#ff0000', 10);
+                this.createParticle(x, y, '#ff0000', 5);
             }, i * 100);
         }
     }
 
-    createParticle(x, y, color, count) {
-        // Simple particle system for visual effects
+    createParticle(x, y, color, count = 1) {
+        // Create particles for visual effects
         for (let i = 0; i < count; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 50 + 20;
             const size = Math.random() * 3 + 1;
             const lifetime = Math.random() * 0.5 + 0.3;
 
-            // Store particles for rendering (implementation would go here)
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: size,
+                color: color,
+                lifetime: lifetime,
+                maxLifetime: lifetime
+            });
         }
     }
 
-    createBladeDrop(npc) {
-        // NPC drops blades based on what it had
+    updateParticles(deltaTime) {
+        // Update and remove expired particles
+        this.particles = this.particles.filter(particle => {
+            particle.x += particle.vx * deltaTime;
+            particle.y += particle.vy * deltaTime;
+            particle.lifetime -= deltaTime;
+            return particle.lifetime > 0;
+        });
+    }
+
+    createBladeDrop(npc, multiplier = 1) {
+        // NPC drops blades based on what it had with multiplier
         Object.entries(npc.bladeCounts).forEach(([color, count]) => {
-            for (let i = 0; i < count; i++) {
-                this.blades.push(new Blade(npc.x, npc.y, color));
+            const bladesToDrop = Math.floor(count * multiplier);
+            for (let i = 0; i < bladesToDrop; i++) {
+                this.blades.push(new Blade(npc.x + Math.random() * 40 - 20, npc.y + Math.random() * 40 - 20, color));
             }
         });
     }
 
     updateUI() {
-        // Update blade counts display
-        document.getElementById('red-count').textContent = this.bladeCounts.red;
-        document.getElementById('yellow-count').textContent = this.bladeCounts.yellow;
-        document.getElementById('blue-count').textContent = this.bladeCounts.blue;
+        // Update blade counts display from player entity
+        document.getElementById('red-count').textContent = this.player.bladeCounts.red;
+        document.getElementById('yellow-count').textContent = this.player.bladeCounts.yellow;
+        document.getElementById('blue-count').textContent = this.player.bladeCounts.blue;
 
         // Update score display
         document.getElementById('score').textContent = this.score;
+    }
+
+    updateStrategicIndicator() {
+        const indicator = document.getElementById('strategic-indicator');
+
+        // Check if any NPC is in strategic mode (avoiding, fleeing, or approaching)
+        const strategicNPCs = this.npcs.filter(npc =>
+            npc.state === 'avoiding' || npc.state === 'fleeing' || npc.state === 'approaching'
+        );
+
+        if (strategicNPCs.length > 0) {
+            indicator.style.display = 'block';
+
+            // Update indicator text based on NPC behavior
+            const avoidingNPCs = this.npcs.filter(npc => npc.state === 'avoiding').length;
+            const fleeingNPCs = this.npcs.filter(npc => npc.state === 'fleeing').length;
+            const approachingNPCs = this.npcs.filter(npc => npc.state === 'approaching').length;
+
+            let statusText = '战略模式: ';
+            if (fleeingNPCs > 0) {
+                statusText += `${fleeingNPCs}个敌人逃跑`;
+            } else if (avoidingNPCs > 0) {
+                statusText += `${avoidingNPCs}个敌人躲避`;
+            } else if (approachingNPCs > 0) {
+                statusText += `${approachingNPCs}个敌人接近`;
+            }
+
+            indicator.textContent = statusText;
+        } else {
+            indicator.style.display = 'none';
+        }
     }
 
     render() {
@@ -421,6 +494,15 @@ class BladeGame {
 
         // Render player
         this.player.render(this.ctx);
+
+        // Render particles
+        this.particles.forEach(particle => {
+            const alpha = particle.lifetime / particle.maxLifetime;
+            this.ctx.fillStyle = particle.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+            this.ctx.beginPath();
+            this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            this.ctx.fill();
+        });
 
         // Restore context
         this.ctx.restore();
@@ -675,15 +757,15 @@ class NPC {
         this.fleeRadius = 150;
     }
 
-    update(deltaTime, player, worldWidth, worldHeight) {
+    update(deltaTime, player, worldWidth, worldHeight, game) {
         const distanceToPlayer = Math.sqrt(
             Math.pow(this.x - player.x, 2) +
             Math.pow(this.y - player.y, 2)
         );
 
-        // Calculate power difference
-        const playerPower = this.calculateCombatPower(player);
-        const npcPower = this.calculateCombatPower(this);
+        // Calculate power difference using unified formula
+        const playerPower = game.calculateCombatPower(player.bladeCounts);
+        const npcPower = game.calculateCombatPower(this.bladeCounts);
         const powerDifference = playerPower - npcPower;
 
         // Strategic AI behavior
@@ -722,12 +804,7 @@ class NPC {
         this.y = Math.max(this.radius, Math.min(this.y, worldHeight - this.radius));
     }
 
-    calculateCombatPower(entity) {
-        const redValue = entity.bladeCounts.red * 3;
-        const yellowValue = entity.bladeCounts.yellow * 2;
-        const blueValue = entity.bladeCounts.blue * 1;
-        return redValue + yellowValue + blueValue;
-    }
+    // calculateCombatPower removed - using unified function from BladeGame
 
     fleeFromPlayer(deltaTime, player) {
         const angle = Math.atan2(this.y - player.y, this.x - player.x);
