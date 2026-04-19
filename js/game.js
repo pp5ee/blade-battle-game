@@ -252,7 +252,7 @@ class BladeGame {
         // Update NPCs
         this.npcs.forEach(npc => npc.update(deltaTime, this.player, this.worldWidth, this.worldHeight, this));
 
-        // Update blades (animation and effects)
+        // Update blades (animation and effects) - ensure blade.update is called
         this.blades.forEach(blade => blade.update(deltaTime));
 
         // Update particles
@@ -287,7 +287,7 @@ class BladeGame {
             );
 
             if (distance < this.player.radius + blade.radius) {
-                // Player collected blade
+                // Player collected blade - update player entity only
                 this.player.bladeCounts[blade.color]++;
                 this.score += 10;
                 return false; // Remove blade from array
@@ -434,7 +434,7 @@ class BladeGame {
     }
 
     updateUI() {
-        // Update blade counts display from player entity
+        // Update blade counts display from player entity (single source of truth)
         document.getElementById('red-count').textContent = this.player.bladeCounts.red;
         document.getElementById('yellow-count').textContent = this.player.bladeCounts.yellow;
         document.getElementById('blue-count').textContent = this.player.bladeCounts.blue;
@@ -763,7 +763,7 @@ class NPC {
             Math.pow(this.y - player.y, 2)
         );
 
-        // Calculate power difference using unified formula
+        // Calculate power difference using unified formula (same as player)
         const playerPower = game.calculateCombatPower(player.bladeCounts);
         const npcPower = game.calculateCombatPower(this.bladeCounts);
         const powerDifference = playerPower - npcPower;
