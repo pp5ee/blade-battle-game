@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>转刀刀 - Blade Blade Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            border: 2px solid #444;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        #game-canvas {
+            display: block;
+            background: #0a0a0a;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .blade-count {
+            margin-bottom: 5px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .red { color: #ff4444; }
+        .yellow { color: #ffff44; }
+        .blue { color: #4444ff; }
+
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #888;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game-canvas" width="800" height="600"></canvas>
+
+        <div id="ui-overlay">
+            <div class="blade-count red">红刀: <span id="red-count">0</span></div>
+            <div class="blade-count yellow">黄刀: <span id="yellow-count">0</span></div>
+            <div class="blade-count blue">蓝刀: <span id="blue-count">0</span></div>
+        </div>
+
+        <div id="instructions">
+            移动: WASD 或 方向键 | 攻击: 靠近敌人自动攻击
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+</body>
+</html>
